@@ -1,0 +1,14 @@
+C:\Users\Iulian\source\repos\fileWatcherSMB\bin\Debug\net8.0\fileWatcherSMB.exe
+C:\Users\Iulian\source\repos\fileWatcherSMB\bin\Debug\net8.0\fileWatcherSMB.deps.json
+C:\Users\Iulian\source\repos\fileWatcherSMB\bin\Debug\net8.0\fileWatcherSMB.runtimeconfig.json
+C:\Users\Iulian\source\repos\fileWatcherSMB\bin\Debug\net8.0\fileWatcherSMB.dll
+C:\Users\Iulian\source\repos\fileWatcherSMB\bin\Debug\net8.0\fileWatcherSMB.pdb
+C:\Users\Iulian\source\repos\fileWatcherSMB\obj\Debug\net8.0\fileWatcherSMB.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Iulian\source\repos\fileWatcherSMB\obj\Debug\net8.0\fileWatcherSMB.AssemblyInfoInputs.cache
+C:\Users\Iulian\source\repos\fileWatcherSMB\obj\Debug\net8.0\fileWatcherSMB.AssemblyInfo.cs
+C:\Users\Iulian\source\repos\fileWatcherSMB\obj\Debug\net8.0\fileWatcherSMB.csproj.CoreCompileInputs.cache
+C:\Users\Iulian\source\repos\fileWatcherSMB\obj\Debug\net8.0\fileWatcherSMB.dll
+C:\Users\Iulian\source\repos\fileWatcherSMB\obj\Debug\net8.0\refint\fileWatcherSMB.dll
+C:\Users\Iulian\source\repos\fileWatcherSMB\obj\Debug\net8.0\fileWatcherSMB.pdb
+C:\Users\Iulian\source\repos\fileWatcherSMB\obj\Debug\net8.0\fileWatcherSMB.genruntimeconfig.cache
+C:\Users\Iulian\source\repos\fileWatcherSMB\obj\Debug\net8.0\ref\fileWatcherSMB.dll
