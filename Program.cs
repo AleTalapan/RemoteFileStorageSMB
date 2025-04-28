@@ -15,7 +15,7 @@ class Program
 
     static void Main()
     {
-        var path = @"Z:\";
+        var path = @"\\172.20.10.6\shared";
 
         if (!Directory.Exists(path))
         {
@@ -30,10 +30,10 @@ class Program
             NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.Attributes 
         };
 
-        watcher.Created += (s, e) => EventQueue.Enqueue(e);
-        watcher.Changed += (s, e) => EventQueue.Enqueue(e);
+        watcher.Created += (s, e) => HandleCreatedEvent(e);
+        watcher.Changed += (s, e) => HandleChangedEvent(e);  // Handle changed events explicitly
         watcher.Deleted += (s, e) => EventQueue.Enqueue(e);
-        watcher.Renamed += (s, e) => EventQueue.Enqueue(e);
+        watcher.Renamed += (s, e) => HandleRenamedEvent(e);
 
         Task.Run(() => ProcessEvents());
 
@@ -51,6 +51,7 @@ class Program
                 if (IsDebounced(e.FullPath))
                     continue;
 
+                // Print event details
                 if (e is RenamedEventArgs renamedEvent)
                 {
                     Console.WriteLine($"Renamed: {renamedEvent.OldFullPath} → {renamedEvent.FullPath}");
@@ -70,6 +71,59 @@ class Program
         }
     }
 
+    // Handle the Created event
+    static void HandleCreatedEvent(FileSystemEventArgs e)
+    {
+        // Ignore temporary files created by editors (e.g., .swp, .goutputstream)
+        if (IsTemporaryFile(e.FullPath))
+        {
+            return; // Ignore these files
+        }
+
+        // Log file creation
+        Console.WriteLine($"Created: {e.FullPath}");
+
+        // Enqueue the event to the queue for further processing (or just process it right away if needed)
+        EventQueue.Enqueue(e);
+    }
+
+    // Handle the Changed event (for modifications)
+    static void HandleChangedEvent(FileSystemEventArgs e)
+    {
+        // Ignore temporary files created by editors (e.g., .swp, .goutputstream)
+        if (IsTemporaryFile(e.FullPath))
+        {
+            return; // Ignore these files
+        }
+
+        // Log file modification
+        Console.WriteLine($"Modified: {e.FullPath}");
+
+        // Enqueue the event to the queue for further processing
+        EventQueue.Enqueue(e);
+    }
+
+    // Handle the Renamed event
+    static void HandleRenamedEvent(RenamedEventArgs e)
+    {
+        // Ignore temporary files created by editors (e.g., .swp, .goutputstream)
+        if (IsTemporaryFile(e.FullPath) || IsTemporaryFile(e.OldFullPath))
+        {
+            return; // Ignore these files
+        }
+
+        // Log file renaming
+        Console.WriteLine($"Renamed: {e.OldFullPath} → {e.FullPath}");
+
+        // Enqueue the event to the queue for further processing
+        EventQueue.Enqueue(e);
+    }
+
+    // Function to detect temporary files like .swp or .goutputstream
+    static bool IsTemporaryFile(string filePath)
+    {
+        return filePath.EndsWith(".swp") || filePath.Contains(".goutputstream");
+    }
 
     private static bool IsDebounced(string path)
     {
