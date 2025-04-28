@@ -3,6 +3,7 @@ using System.IO;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 class Program
 {
@@ -30,10 +31,10 @@ class Program
             NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.Attributes 
         };
 
-        watcher.Created += (s, e) => HandleCreatedEvent(e);
-        watcher.Changed += (s, e) => HandleChangedEvent(e);  // Handle changed events explicitly
-        watcher.Deleted += (s, e) => EventQueue.Enqueue(e);
-        watcher.Renamed += (s, e) => HandleRenamedEvent(e);
+        watcher.Created += (s, e) => HandleFileEvent(e);
+        watcher.Changed += (s, e) => HandleFileEvent(e);
+        watcher.Deleted += (s, e) => HandleFileEvent(e);
+        watcher.Renamed += (s, e) => HandleFileEvent(e);
 
         Task.Run(() => ProcessEvents());
 
@@ -51,14 +52,22 @@ class Program
                 if (IsDebounced(e.FullPath))
                     continue;
 
-                // Print event details
+                // If the event is a rename, handle it differently
                 if (e is RenamedEventArgs renamedEvent)
                 {
-                    Console.WriteLine($"Renamed: {renamedEvent.OldFullPath} → {renamedEvent.FullPath}");
+                    // Only output renamed events for actual file renames (not temp files)
+                    if (!IsTemporaryFile(renamedEvent.OldFullPath) && !IsTemporaryFile(renamedEvent.FullPath))
+                    {
+                        Console.WriteLine($"Renamed: {renamedEvent.OldFullPath} → {renamedEvent.FullPath}");
+                    }
                 }
-                else
+                else if (e is FileSystemEventArgs fileEvent)
                 {
-                    Console.WriteLine($"{e.ChangeType}: {e.FullPath}");
+                    // Handle regular file changes (e.g., Created, Deleted, Modified)
+                    if (!IsTemporaryFile(fileEvent.FullPath))
+                    {
+                        Console.WriteLine($"{e.ChangeType}: {e.FullPath}");
+                    }
                 }
 
                 ProcessedEvents++;
@@ -71,58 +80,42 @@ class Program
         }
     }
 
-    // Handle the Created event
-    static void HandleCreatedEvent(FileSystemEventArgs e)
+    // Event handler to process file system events
+    static void HandleFileEvent(FileSystemEventArgs e)
     {
-        // Ignore temporary files created by editors (e.g., .swp, .goutputstream)
+        // Skip temporary files (e.g., .goutputstream, .swp, etc.)
         if (IsTemporaryFile(e.FullPath))
         {
-            return; // Ignore these files
+            // If it's a temporary file and it's related to a modification, treat it as a modification
+            if (e.ChangeType == WatcherChangeTypes.Created || e.ChangeType == WatcherChangeTypes.Renamed)
+            {
+                // Determine the original file name (remove .goutputstream suffix)
+                string originalFileName = GetOriginalFileName(e.FullPath);
+                Console.WriteLine($"Modified: {originalFileName}");
+                return; // Skip further processing of temporary files
+            }
+            return; // Skip any further actions for temporary files
         }
 
-        // Log file creation
-        Console.WriteLine($"Created: {e.FullPath}");
-
-        // Enqueue the event to the queue for further processing (or just process it right away if needed)
-        EventQueue.Enqueue(e);
-    }
-
-    // Handle the Changed event (for modifications)
-    static void HandleChangedEvent(FileSystemEventArgs e)
-    {
-        // Ignore temporary files created by editors (e.g., .swp, .goutputstream)
-        if (IsTemporaryFile(e.FullPath))
-        {
-            return; // Ignore these files
-        }
-
-        // Log file modification
-        Console.WriteLine($"Modified: {e.FullPath}");
-
-        // Enqueue the event to the queue for further processing
-        EventQueue.Enqueue(e);
-    }
-
-    // Handle the Renamed event
-    static void HandleRenamedEvent(RenamedEventArgs e)
-    {
-        // Ignore temporary files created by editors (e.g., .swp, .goutputstream)
-        if (IsTemporaryFile(e.FullPath) || IsTemporaryFile(e.OldFullPath))
-        {
-            return; // Ignore these files
-        }
-
-        // Log file renaming
-        Console.WriteLine($"Renamed: {e.OldFullPath} → {e.FullPath}");
-
-        // Enqueue the event to the queue for further processing
+        // If it's a real file event, just enqueue it for processing
         EventQueue.Enqueue(e);
     }
 
     // Function to detect temporary files like .swp or .goutputstream
     static bool IsTemporaryFile(string filePath)
     {
-        return filePath.EndsWith(".swp") || filePath.Contains(".goutputstream");
+        return filePath.Contains(".goutputstream") || filePath.EndsWith(".swp");
+    }
+
+    // Function to get the original file name from a temporary file name (e.g., remove the .goutputstream part)
+    static string GetOriginalFileName(string tempFilePath)
+    {
+        // Remove the temporary file extension (e.g., .goutputstream) to get the original file name
+        if (tempFilePath.Contains(".goutputstream"))
+        {
+            return tempFilePath.Replace(".goutputstream", "");
+        }
+        return tempFilePath; // Return the original path if it's not a temporary file
     }
 
     private static bool IsDebounced(string path)
